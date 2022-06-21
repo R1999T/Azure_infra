@@ -69,3 +69,33 @@ resource "azurerm_network_security_rule" "rt_dev_rule" {
   network_security_group_name = azurerm_network_security_group.rt_sg.name
 }
 
+resource "azurerm_subnet_network_security_group_association" "rt_sg_association" {
+  subnet_id                 = azurerm_subnet.rt_subnet.id
+  network_security_group_id = azurerm_network_security_group.rt_sg.id
+}
+
+//public ip
+resource "azurerm_public_ip" "rt_ip" {
+  name                = "rt_ip"
+  resource_group_name = azurerm_resource_group.rt_rg.name
+  location            = azurerm_resource_group.rt_rg.location
+  allocation_method   = "Dynamic" //you can choose static (cost will increase)
+
+  tags = {
+    environment = "dev"
+  }
+}
+
+//network interface that we will attach to our VM for network connectivity and IP is attached to the VM we just created
+resource "azurerm_network_interface" "rt_nic" {
+  name                = "rt_nic"
+  location            = azurerm_resource_group.rt_rg.location
+  resource_group_name = azurerm_resource_group.rt_rg.name
+
+  ip_configuration {
+    name                          = "internal"
+    subnet_id                     = azurerm_subnet.rt_subnet.id
+    private_ip_address_allocation = "Dynamic"
+    public_ip_address_id          = azurerm_public_ip.rt_ip.id //reade the node in the docs
+  }
+}
